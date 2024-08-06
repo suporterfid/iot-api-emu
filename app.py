@@ -249,36 +249,6 @@ class DisableAntennaHub(Resource):
     def post(self):
         return '', 202
 
-class CaCertificates(Resource):
-    def get(self):
-        return jsonify([{"certId": 1, "certInfo": "CA Certificate info"}])
-    
-    def post(self):
-        file = request.files['certFile']
-        return jsonify([{"certId": 1}])
-
-class CaCertificate(Resource):
-    def get(self, certId):
-        return jsonify({"certId": certId, "certInfo": "CA Certificate info"})
-    
-    def delete(self, certId):
-        return '', 204
-
-class TlsCertificates(Resource):
-    def get(self):
-        return jsonify([{"certId": 1, "certInfo": "TLS Certificate info"}])
-    
-    def post(self):
-        file = request.files['certFile']
-        password = request.form.get('password')
-        return jsonify([{"certId": 1}])
-
-class TlsCertificate(Resource):
-    def get(self, certId):
-        return jsonify({"certId": certId, "certInfo": "TLS Certificate info"})
-    
-    def delete(self, certId):
-        return '', 204
 
 # Add routes
 api.add_resource(OpenAPIDocument, '/api/v1/openapi.json')
@@ -298,10 +268,6 @@ api.add_resource(UserPassword, '/api/v1/system/access/users/<int:userId>/passwor
 api.add_resource(AntennaHubInfo, '/api/v1/system/antenna-hub')
 api.add_resource(EnableAntennaHub, '/api/v1/system/antenna-hub/enable')
 api.add_resource(DisableAntennaHub, '/api/v1/system/antenna-hub/disable')
-api.add_resource(CaCertificates, '/api/v1/system/certificates/ca/certs')
-api.add_resource(CaCertificate, '/api/v1/system/certificates/ca/certs/<int:certId>')
-api.add_resource(TlsCertificates, '/api/v1/system/certificates/tls/certs')
-api.add_resource(TlsCertificate, '/api/v1/system/certificates/tls/certs/<int:certId>')
 api.add_resource(StartStream, '/api/v1/profiles/inventory/presets/<string:preset_id>/start')
 api.add_resource(StopStream, '/api/v1/profiles/stop')
 
