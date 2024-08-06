@@ -19,8 +19,8 @@ This project emulates an IoT device interface API with support for MQTT and Webh
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/suporterfid/iot-dev-if-emu.git
-    cd iot-dev-if-emu
+    git clone https://github.com/suporterfid/iot-api-emu.git
+    cd iot-api-emu
     ```
 
 2. **Create and activate a virtual environment**:
@@ -121,8 +121,19 @@ curl -X PUT http://127.0.0.1:5000/api/v1/webhooks/event -H "Content-Type: applic
     }
 }'
 ```
+## Disclaimer
 
-Additional Information
+This emulator is designed to accelerate the initial development process for new adopters of RAIN RFID who are in the process of acquiring an Impinj R700 RAIN RFID reader with the IoT Device Interface. It does not aim to replace the hardware and comes with no guarantee of updates in accordance with new released versions of the API. Use it at your own risk. This code is neither supported nor endorsed by Impinj Inc.
+
+### WARRANTY DISCLAIMER
+
+This software is provided “as is” without quality check, and there is no warranty that the software will operate without error or interruption or meet any performance standard or other expectation. All warranties, express or implied, including the implied warranties of merchantability, non-infringement, quality, accuracy, and fitness for a particular purpose are expressly disclaimed. The developers of this software are not obligated in any way to provide support or other maintenance with respect to this software.
+
+### LIMITATION OF LIABILITY
+
+The total liability arising out of or related to the use of this software will not exceed the total amount paid by the user for this software, which in this case is zero as the software is provided free of charge. In no event will the developers have liability for any indirect, incidental, special, or consequential damages, even if advised of the possibility of these damages. These limitations will apply notwithstanding any failure of essential purpose of any limited remedy provided.
+
+### Additional Information
 Flask: A lightweight WSGI web application framework in Python.
 Flask-RESTful: An extension for Flask that adds support for quickly building REST APIs.
 paho-mqtt: The Paho Python Client provides a client class that enables applications to connect to an MQTT broker.
