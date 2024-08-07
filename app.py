@@ -119,8 +119,9 @@ def webhook_publisher():
     while True:
         if webhook_config.get('active', False):
             events = []
+            linger_ms = webhook_config.get('eventBatchLingerMilliseconds', 1000)
             start_time = time.time()
-            while time.time() - start_time < webhook_config.get('eventBatchLingerMilliseconds', 1000) / 1000:
+            while time.time() - start_time < linger_ms / 1000.0:
                 if not streaming and not events:
                     break
                 if streaming:
@@ -137,11 +138,12 @@ def webhook_publisher():
                     url = webhook_config['serverConfiguration']['url']
                     auth = webhook_config['serverConfiguration']['authentication']
                     headers = {'Content-Type': 'application/json'}
-                    response = requests.post(url, json=events, headers=headers, auth=(auth['username'], auth['password']))
+                    verify_ssl = webhook_config['serverConfiguration'].get('tls', {}).get('verify', True)
+                    response = requests.post(url, json=events, headers=headers, auth=(auth['username'], auth['password']), verify=verify_ssl)
                     if response.status_code == 200:
                         print("Events successfully sent to webhook")
                     else:
-                        print(f"Failed to send events to webhook, status code: {response.status_code}")
+                        print(f"Failed to send events to webhook, status code: {response.status_code}, response: {response.text}")
                 except Exception as e:
                     print(f"Error sending events to webhook: {e}")
         else:

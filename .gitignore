@@ -1496,3 +1496,4 @@ venv/Scripts/pip3.11.exe
 venv/Scripts/pip3.exe
 venv/Scripts/python.exe
 venv/Scripts/pythonw.exe
+settings.json
