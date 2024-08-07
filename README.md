@@ -7,6 +7,7 @@ This project emulates an IoT device interface API with support for MQTT and Webh
 - Emulate tag event streaming
 - Publish events to MQTT brokers
 - Publish events to HTTP servers via Webhooks
+- Support for predefined EPC lists from files
 
 ## Setup Development Environment
 
@@ -38,6 +39,42 @@ This project emulates an IoT device interface API with support for MQTT and Webh
     ```sh
     python app.py
     ```
+
+## EPC List Enhancements
+
+The emulator now supports loading predefined EPC lists from local files. There are two modes of operation based on the presence of these files:
+
+### 1. `reference-list.txt`
+
+- If a file named `reference-list.txt` is present in the same directory as `app.py`, the EPCs from this file will be sent in the tag events repeatedly.
+- Each line in this file should contain a single EPC in hexadecimal format.
+
+#### Example `reference-list.txt`
+```sh
+3500B6D9801234567890ABCDEF
+3500B6D9800987654321FEDCBA
+3500B6D9801122334455667788
+3500B6D980AABBCCDDEEFF0011
+3500B6D9802233445566778899
+```
+
+### 2. `reference-list-unique.txt`
+
+- If a file named `reference-list-unique.txt` is present, the EPCs from this file will be sent only once between the start and stop of the stream.
+- Each line in this file should also contain a single EPC in hexadecimal format.
+
+#### Example `reference-list-unique.txt`
+```sh
+3500B6D9801234567890ABCDEF
+3500B6D9800987654321FEDCBA
+3500B6D9801122334455667788
+3500B6D980AABBCCDDEEFF0011
+3500B6D9802233445566778899
+```
+### 3. Default Behavior
+
+- If neither `reference-list.txt` nor `reference-list-unique.txt` is present, the emulator will generate random EPCs for the tag events.
+
 
 ## API Endpoints
 

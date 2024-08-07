@@ -8,13 +8,13 @@ import threading
 import paho.mqtt.client as mqtt
 import requests
 import os
-from flasgger import Swagger
 
 app = Flask(__name__)
 api = Api(app)
-swagger = Swagger(app)
-
 SETTINGS_FILE = "settings.json"
+
+reference_list_file = "reference-list.txt"
+reference_list_unique_file = "reference-list-unique.txt"
 
 class EPC:
     DefaultHeader = 0x35
@@ -63,6 +63,10 @@ streaming = False
 mqtt_config = {}
 webhook_config = {}
 mqtt_client = mqtt.Client()
+epc_list = []
+epc_index = 0
+unique_epc_list = []
+unique_epc_sent = False
 
 def load_settings():
     global mqtt_config, webhook_config
@@ -82,8 +86,17 @@ def save_settings():
         json.dump(settings, f)
         print("Settings saved to file")
 
-# Load settings at startup
+def load_epc_list(file_name):
+    epc_list = []
+    if os.path.exists(file_name):
+        with open(file_name, 'r') as f:
+            epc_list = [line.strip() for line in f.readlines()]
+    return epc_list
+
+# Load settings and EPC list at startup
 load_settings()
+epc_list = load_epc_list(reference_list_file)
+unique_epc_list = load_epc_list(reference_list_unique_file)
 
 # MQTT functions
 def on_connect(client, userdata, flags, rc):
@@ -127,7 +140,7 @@ def webhook_publisher():
                 if not streaming and not events:
                     break
                 if streaming:
-                    epc = EPC()
+                    epc = get_next_epc()
                     event = TagEvent(epc)
                     events.append(event.to_dict())
                 time.sleep(0.1)  # Slight delay to simulate event collection
@@ -151,6 +164,34 @@ def webhook_publisher():
         else:
             time.sleep(1)  # Sleep if webhook is not active
 
+def get_next_epc():
+    global epc_index, unique_epc_sent
+    if os.path.exists(reference_list_unique_file) and not unique_epc_sent:
+        if epc_index < len(unique_epc_list):
+            epc = EPC()
+            epc.header = int(unique_epc_list[epc_index][0:2], 16)
+            epc.manager = int(unique_epc_list[epc_index][2:9], 16)
+            epc.class_ = int(unique_epc_list[epc_index][9:15], 16)
+            epc.serial = int(unique_epc_list[epc_index][15:24], 16)
+            epc_index += 1
+            if epc_index == len(unique_epc_list):
+                unique_epc_sent = True
+            return epc
+        else:
+            return None
+    elif os.path.exists(reference_list_file):
+        if epc_index >= len(epc_list):
+            epc_index = 0
+        epc = EPC()
+        epc.header = int(epc_list[epc_index][0:2], 16)
+        epc.manager = int(epc_list[epc_index][2:9], 16)
+        epc.class_ = int(epc_list[epc_index][9:15], 16)
+        epc.serial = int(epc_list[epc_index][15:24], 16)
+        epc_index += 1
+        return epc
+    else:
+        return EPC()
+
 # Start the webhook publisher in a separate thread
 threading.Thread(target=webhook_publisher, daemon=True).start()
 
@@ -166,7 +207,9 @@ class DataStream(Resource):
         """
         def generate():
             while streaming:
-                epc = EPC()
+                epc = get_next_epc()
+                if epc is None:
+                    break
                 event = TagEvent(epc)
                 event_data = event.to_dict()
                 yield f"data: {json.dumps(event_data)}\n\n"
@@ -192,9 +235,11 @@ class StartStream(Resource):
           404:
             description: Preset not found
         """
-        global streaming
+        global streaming, epc_index, unique_epc_sent
         if preset_id == 'default':
             streaming = True
+            epc_index = 0
+            unique_epc_sent = False
             return '', 204
         return '', 404
 
