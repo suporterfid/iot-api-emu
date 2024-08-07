@@ -160,7 +160,7 @@ curl -X PUT http://127.0.0.1:5000/api/v1/webhooks/event -H "Content-Type: applic
 ```
 ## Disclaimer
 
-This emulator is designed to accelerate the initial development process for new adopters of RAIN RFID who are in the process of acquiring an Impinj R700 RAIN RFID reader with the IoT Device Interface. It does not aim to replace the hardware and comes with no guarantee of updates in accordance with new released versions of the API. Use it at your own risk. This code is neither supported nor endorsed by Impinj Inc.
+This emulator is designed to accelerate the initial development process for new adopters of RAIN RFID who are in the process of acquiring an Impinj R700 RAIN RFID reader with the IoT Device Interface. **It does not aim to replace the hardware** and comes with no guarantee of updates in accordance with new released versions of the API. Use it at your own risk. **This code is neither supported nor endorsed by Impinj Inc.**
 
 ### WARRANTY DISCLAIMER
 
