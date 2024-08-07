@@ -1,6 +1,6 @@
 # IoT Device Interface API Emulator
 
-This project emulates an IoT device interface API with support for MQTT and Webhook publishers. The emulator can stream tag events and publish them to configured MQTT brokers and HTTP servers.
+This project **emulates basic operations** of the IoT device interface API with support for MQTT and Webhook publishers. The emulator can stream tag events and publish them to configured MQTT brokers and HTTP servers.
 
 ## Features
 
