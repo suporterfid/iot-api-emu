@@ -8,9 +8,11 @@ import threading
 import paho.mqtt.client as mqtt
 import requests
 import os
+from flasgger import Swagger
 
 app = Flask(__name__)
 api = Api(app)
+swagger = Swagger(app)
 
 SETTINGS_FILE = "settings.json"
 
@@ -155,6 +157,13 @@ threading.Thread(target=webhook_publisher, daemon=True).start()
 # API endpoints
 class DataStream(Resource):
     def get(self):
+        """
+        Get the streamed tag events.
+        ---
+        responses:
+          200:
+            description: Streamed tag events
+        """
         def generate():
             while streaming:
                 epc = EPC()
@@ -169,6 +178,20 @@ class DataStream(Resource):
 
 class StartStream(Resource):
     def post(self, preset_id):
+        """
+        Start streaming tag events.
+        ---
+        parameters:
+          - in: path
+            name: preset_id
+            required: true
+            type: string
+        responses:
+          204:
+            description: Stream started
+          404:
+            description: Preset not found
+        """
         global streaming
         if preset_id == 'default':
             streaming = True
@@ -177,15 +200,80 @@ class StartStream(Resource):
 
 class StopStream(Resource):
     def post(self):
+        """
+        Stop streaming tag events.
+        ---
+        responses:
+          204:
+            description: Stream stopped
+        """
         global streaming
         streaming = False
         return '', 204
 
 class MqttSettings(Resource):
     def get(self):
+        """
+        Get MQTT settings.
+        ---
+        responses:
+          200:
+            description: MQTT settings
+        """
         return jsonify(mqtt_config)
     
     def put(self):
+        """
+        Update MQTT settings.
+        ---
+        parameters:
+          - in: body
+            name: body
+            schema:
+              type: object
+              properties:
+                brokerHostname:
+                  type: string
+                clientId:
+                  type: string
+                eventTopic:
+                  type: string
+                active:
+                  type: boolean
+                brokerPort:
+                  type: integer
+                cleanSession:
+                  type: boolean
+                connectMessage:
+                  type: string
+                disconnectMessage:
+                  type: string
+                eventBufferSize:
+                  type: integer
+                eventPendingDeliveryLimit:
+                  type: integer
+                eventPerSecondLimit:
+                  type: integer
+                eventQualityOfService:
+                  type: integer
+                keepAliveIntervalSeconds:
+                  type: integer
+                password:
+                  type: string
+                tlsEnabled:
+                  type: boolean
+                username:
+                  type: string
+                willMessage:
+                  type: string
+                willQualityOfService:
+                  type: integer
+                willTopic:
+                  type: string
+        responses:
+          204:
+            description: MQTT settings updated
+        """
         global mqtt_config, mqtt_client
         data = request.get_json()
         mqtt_config = {key: value for key, value in data.items() if value is not None and value != ""}
@@ -210,9 +298,55 @@ class MqttSettings(Resource):
 
 class WebhookSettings(Resource):
     def get(self):
+        """
+        Get Webhook settings.
+        ---
+        responses:
+          200:
+            description: Webhook settings
+        """
         return jsonify(webhook_config)
     
     def put(self):
+        """
+        Update Webhook settings.
+        ---
+        parameters:
+          - in: body
+            name: body
+            schema:
+              type: object
+              properties:
+                active:
+                  type: boolean
+                eventBatchLimit:
+                  type: integer
+                eventBatchLingerMilliseconds:
+                  type: integer
+                eventBufferSize:
+                  type: integer
+                retry:
+                  type: object
+                serverConfiguration:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                    authentication:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                        username:
+                          type: string
+                    port:
+                      type: integer
+                    tls:
+                      type: object
+        responses:
+          204:
+            description: Webhook settings updated
+        """
         global webhook_config
         data = request.get_json()
         webhook_config = {key: value for key, value in data.items() if value is not None and value != ""}
@@ -221,41 +355,111 @@ class WebhookSettings(Resource):
 
 class OpenAPIDocument(Resource):
     def get(self):
+        """
+        Get the OpenAPI documentation.
+        ---
+        responses:
+          200:
+            description: OpenAPI documentation
+        """
         return jsonify({"swagger": "2.0", "info": {"version": "1.8.0"}})
 
 class Status(Resource):
     def get(self):
+        """
+        Get the status of the reader.
+        ---
+        responses:
+          200:
+            description: Reader status
+        """
         return jsonify({"status": "Reader is active and running"})
 
 class HttpStreamSettings(Resource):
     def get(self):
+        """
+        Get HTTP stream settings.
+        ---
+        responses:
+          200:
+            description: HTTP stream settings
+        """
         return jsonify({"streamSettings": "Current HTTP stream settings"})
     
     def put(self):
+        """
+        Update HTTP stream settings.
+        ---
+        responses:
+          204:
+            description: HTTP stream settings updated
+        """
         data = request.get_json()
         return '', 204
 
 class KafkaSettings(Resource):
     def get(self):
+        """
+        Get Kafka settings.
+        ---
+        responses:
+          200:
+            description: Kafka settings
+        """
         return jsonify({"kafkaSettings": "Current Kafka settings"})
     
     def put(self):
+        """
+        Update Kafka settings.
+        ---
+        responses:
+          204:
+            description: Kafka settings updated
+        """
         data = request.get_json()
         return '', 204
 
 class Profiles(Resource):
     def get(self):
+        """
+        Get profiles.
+        ---
+        responses:
+          200:
+            description: List of profiles
+        """
         return jsonify(["inventory", "location", "direction"])
 
 class StopProfile(Resource):
     def post(self):
+        """
+        Stop a profile.
+        ---
+        responses:
+          204:
+            description: Profile stopped
+        """
         return '', 204
 
 class EventWebhookConfiguration(Resource):
     def get(self):
+        """
+        Get Webhook event configuration.
+        ---
+        responses:
+          200:
+            description: Webhook event configuration
+        """
         return jsonify(webhook_config)
     
     def put(self):
+        """
+        Update Webhook event configuration.
+        ---
+        responses:
+          204:
+            description: Webhook event configuration updated
+        """
         global webhook_config
         data = request.get_json()
         webhook_config = {key: value for key, value in data.items() if value is not None and value != ""}
@@ -264,66 +468,214 @@ class EventWebhookConfiguration(Resource):
 
 class SystemInfo(Resource):
     def get(self):
+        """
+        Get system information.
+        ---
+        responses:
+          200:
+            description: System information
+        """
         return jsonify({"systemInfo": "Details about the reader hardware"})
 
 class AuthenticationConfig(Resource):
     def get(self):
+        """
+        Get authentication configuration.
+        ---
+        responses:
+          200:
+            description: Authentication configuration
+        """
         return jsonify({"authConfig": "Current authentication configuration"})
     
     def put(self):
+        """
+        Update authentication configuration.
+        ---
+        responses:
+          204:
+            description: Authentication configuration updated
+        """
         data = request.get_json()
         return '', 204
 
 class Users(Resource):
     def get(self):
+        """
+        Get users.
+        ---
+        responses:
+          200:
+            description: List of users
+        """
         return jsonify([{"userId": 1, "username": "admin"}])
 
 class UserPassword(Resource):
     def put(self, userId):
+        """
+        Update user password.
+        ---
+        parameters:
+          - in: path
+            name: userId
+            required: true
+            type: integer
+        responses:
+          204:
+            description: User password updated
+        """
         data = request.get_json()
         return '', 204
 
 class AntennaHubInfo(Resource):
     def get(self):
+        """
+        Get antenna hub information.
+        ---
+        responses:
+          200:
+            description: Antenna hub information
+        """
         return jsonify({"antennaHubInfo": "Current antenna hub status"})
     
 class EnableAntennaHub(Resource):
     def post(self):
+        """
+        Enable antenna hub.
+        ---
+        responses:
+          202:
+            description: Antenna hub enabled
+        """
         return '', 202
 
 class DisableAntennaHub(Resource):
     def post(self):
+        """
+        Disable antenna hub.
+        ---
+        responses:
+          202:
+            description: Antenna hub disabled
+        """
         return '', 202
 
 class CaCertificates(Resource):
     def get(self):
+        """
+        Get CA certificates.
+        ---
+        responses:
+          200:
+            description: List of CA certificates
+        """
         return jsonify([{"certId": 1, "certInfo": "CA Certificate info"}])
     
     def post(self):
+        """
+        Upload CA certificate.
+        ---
+        parameters:
+          - in: formData
+            name: certFile
+            type: file
+        responses:
+          200:
+            description: CA certificate uploaded
+        """
         file = request.files['certFile']
         return jsonify([{"certId": 1}])
 
 class CaCertificate(Resource):
     def get(self, certId):
+        """
+        Get CA certificate.
+        ---
+        parameters:
+          - in: path
+            name: certId
+            required: true
+            type: integer
+        responses:
+          200:
+            description: CA certificate information
+        """
         return jsonify({"certId": certId, "certInfo": "CA Certificate info"})
     
     def delete(self, certId):
+        """
+        Delete CA certificate.
+        ---
+        parameters:
+          - in: path
+            name: certId
+            required: true
+            type: integer
+        responses:
+          204:
+            description: CA certificate deleted
+        """
         return '', 204
 
 class TlsCertificates(Resource):
     def get(self):
+        """
+        Get TLS certificates.
+        ---
+        responses:
+          200:
+            description: List of TLS certificates
+        """
         return jsonify([{"certId": 1, "certInfo": "TLS Certificate info"}])
     
     def post(self):
+        """
+        Upload TLS certificate.
+        ---
+        parameters:
+          - in: formData
+            name: certFile
+            type: file
+          - in: formData
+            name: password
+            type: string
+        responses:
+          200:
+            description: TLS certificate uploaded
+        """
         file = request.files['certFile']
         password = request.form.get('password')
         return jsonify([{"certId": 1}])
 
 class TlsCertificate(Resource):
     def get(self, certId):
+        """
+        Get TLS certificate.
+        ---
+        parameters:
+          - in: path
+            name: certId
+            required: true
+            type: integer
+        responses:
+          200:
+            description: TLS certificate information
+        """
         return jsonify({"certId": certId, "certInfo": "TLS Certificate info"})
     
     def delete(self, certId):
+        """
+        Delete TLS certificate.
+        ---
+        parameters:
+          - in: path
+            name: certId
+            required: true
+            type: integer
+        responses:
+          204:
+            description: TLS certificate deleted
+        """
         return '', 204
 
 # Add routes
