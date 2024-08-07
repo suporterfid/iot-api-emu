@@ -37,7 +37,7 @@ This project **emulates basic operations** of the IoT device interface API with 
 
 4. **Run the Flask application**:
     ```sh
-    python app.py
+    python run.py
     ```
 
 ## EPC List Enhancements
