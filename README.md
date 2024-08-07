@@ -139,3 +139,6 @@ Flask-RESTful: An extension for Flask that adds support for quickly building RES
 paho-mqtt: The Paho Python Client provides a client class that enables applications to connect to an MQTT broker.
 requests: A simple, yet elegant HTTP library for Python.
 For more information, please refer to the official documentation.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
