@@ -7,9 +7,12 @@ import base64
 import threading
 import paho.mqtt.client as mqtt
 import requests
+import os
 
 app = Flask(__name__)
 api = Api(app)
+
+SETTINGS_FILE = "settings.json"
 
 class EPC:
     DefaultHeader = 0x35
@@ -59,6 +62,27 @@ mqtt_config = {}
 webhook_config = {}
 mqtt_client = mqtt.Client()
 
+def load_settings():
+    global mqtt_config, webhook_config
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r') as f:
+            settings = json.load(f)
+            mqtt_config = settings.get("mqtt_config", {})
+            webhook_config = settings.get("webhook_config", {})
+            print("Settings loaded from file")
+
+def save_settings():
+    with open(SETTINGS_FILE, 'w') as f:
+        settings = {
+            "mqtt_config": mqtt_config,
+            "webhook_config": webhook_config
+        }
+        json.dump(settings, f)
+        print("Settings saved to file")
+
+# Load settings at startup
+load_settings()
+
 # MQTT functions
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -91,21 +115,40 @@ mqtt_client.on_disconnect = on_disconnect
 mqtt_client.on_publish = on_publish
 
 # Webhook functions
-def send_to_webhook(event_data):
-    while webhook_config.get('active', False):
-        try:
-            url = webhook_config['serverConfiguration']['url']
-            auth = webhook_config['serverConfiguration']['authentication']
-            headers = {'Content-Type': 'application/json'}
-            response = requests.post(url, json=event_data, headers=headers, auth=(auth['username'], auth['password']))
-            if response.status_code == 200:
-                print("Event successfully sent to webhook")
-                break
-            else:
-                print(f"Failed to send event to webhook, status code: {response.status_code}")
-        except Exception as e:
-            print(f"Error sending event to webhook: {e}")
-        time.sleep(webhook_config.get('eventBatchLingerMilliseconds', 1000) / 1000)
+def webhook_publisher():
+    while True:
+        if webhook_config.get('active', False):
+            events = []
+            start_time = time.time()
+            while time.time() - start_time < webhook_config.get('eventBatchLingerMilliseconds', 1000) / 1000:
+                if not streaming and not events:
+                    break
+                if streaming:
+                    epc = EPC()
+                    event = TagEvent(epc)
+                    events.append(event.to_dict())
+                time.sleep(0.1)  # Slight delay to simulate event collection
+            
+            if not events and not streaming:
+                events = []  # Send keepalive with empty list
+            
+            if events or not streaming:
+                try:
+                    url = webhook_config['serverConfiguration']['url']
+                    auth = webhook_config['serverConfiguration']['authentication']
+                    headers = {'Content-Type': 'application/json'}
+                    response = requests.post(url, json=events, headers=headers, auth=(auth['username'], auth['password']))
+                    if response.status_code == 200:
+                        print("Events successfully sent to webhook")
+                    else:
+                        print(f"Failed to send events to webhook, status code: {response.status_code}")
+                except Exception as e:
+                    print(f"Error sending events to webhook: {e}")
+        else:
+            time.sleep(1)  # Sleep if webhook is not active
+
+# Start the webhook publisher in a separate thread
+threading.Thread(target=webhook_publisher, daemon=True).start()
 
 # API endpoints
 class DataStream(Resource):
@@ -118,8 +161,6 @@ class DataStream(Resource):
                 yield f"data: {json.dumps(event_data)}\n\n"
                 if mqtt_config.get('active', False):
                     mqtt_client.publish(mqtt_config.get('eventTopic', 'default/topic'), json.dumps(event_data), qos=mqtt_config.get('eventQualityOfService', 0))
-                if webhook_config.get('active', False):
-                    threading.Thread(target=send_to_webhook, args=(event_data,)).start()
                 time.sleep(2)  # Simulate delay between events
                 
         return Response(generate(), content_type='text/event-stream')
@@ -162,6 +203,7 @@ class MqttSettings(Resource):
         if mqtt_config.get('active', False):
             threading.Thread(target=connect_mqtt).start()
         
+        save_settings()
         return '', 204
 
 class WebhookSettings(Resource):
@@ -172,6 +214,7 @@ class WebhookSettings(Resource):
         global webhook_config
         data = request.get_json()
         webhook_config = {key: value for key, value in data.items() if value is not None and value != ""}
+        save_settings()
         return '', 204
 
 class OpenAPIDocument(Resource):
@@ -214,6 +257,7 @@ class EventWebhookConfiguration(Resource):
         global webhook_config
         data = request.get_json()
         webhook_config = {key: value for key, value in data.items() if value is not None and value != ""}
+        save_settings()
         return '', 204
 
 class SystemInfo(Resource):
@@ -249,6 +293,36 @@ class DisableAntennaHub(Resource):
     def post(self):
         return '', 202
 
+class CaCertificates(Resource):
+    def get(self):
+        return jsonify([{"certId": 1, "certInfo": "CA Certificate info"}])
+    
+    def post(self):
+        file = request.files['certFile']
+        return jsonify([{"certId": 1}])
+
+class CaCertificate(Resource):
+    def get(self, certId):
+        return jsonify({"certId": certId, "certInfo": "CA Certificate info"})
+    
+    def delete(self, certId):
+        return '', 204
+
+class TlsCertificates(Resource):
+    def get(self):
+        return jsonify([{"certId": 1, "certInfo": "TLS Certificate info"}])
+    
+    def post(self):
+        file = request.files['certFile']
+        password = request.form.get('password')
+        return jsonify([{"certId": 1}])
+
+class TlsCertificate(Resource):
+    def get(self, certId):
+        return jsonify({"certId": certId, "certInfo": "TLS Certificate info"})
+    
+    def delete(self, certId):
+        return '', 204
 
 # Add routes
 api.add_resource(OpenAPIDocument, '/api/v1/openapi.json')
@@ -268,6 +342,10 @@ api.add_resource(UserPassword, '/api/v1/system/access/users/<int:userId>/passwor
 api.add_resource(AntennaHubInfo, '/api/v1/system/antenna-hub')
 api.add_resource(EnableAntennaHub, '/api/v1/system/antenna-hub/enable')
 api.add_resource(DisableAntennaHub, '/api/v1/system/antenna-hub/disable')
+api.add_resource(CaCertificates, '/api/v1/system/certificates/ca/certs')
+api.add_resource(CaCertificate, '/api/v1/system/certificates/ca/certs/<int:certId>')
+api.add_resource(TlsCertificates, '/api/v1/system/certificates/tls/certs')
+api.add_resource(TlsCertificate, '/api/v1/system/certificates/tls/certs/<int:certId>')
 api.add_resource(StartStream, '/api/v1/profiles/inventory/presets/<string:preset_id>/start')
 api.add_resource(StopStream, '/api/v1/profiles/stop')
 
