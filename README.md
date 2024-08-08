@@ -40,6 +40,24 @@ This project **emulates basic operations** of the IoT device interface API with 
     python run.py
     ```
 
+## Running the Application with Docker
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### Build and Run the Docker Container
+
+1. **Build and run the Docker container using Docker Compose**:
+    ```sh
+    docker-compose up --build
+    ```
+
+2. **Access the application**:
+    - The application will be available at `http://localhost:5000`
+    - The Swagger UI will be accessible at `http://localhost:5000/swagger/`
+
 ## EPC List Enhancements
 
 The emulator now supports loading predefined EPC lists from local files. There are two modes of operation based on the presence of these files:
