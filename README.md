@@ -9,7 +9,6 @@ This project **emulates basic operations** of the IoT device interface API with 
 - Publish events to HTTP servers via Webhooks
 - Support for predefined EPC lists from files
 - HTTPS support with self-signed certificate
-- HTTPS support with self-signed certificate
 - Configurable basic authentication
 - Management API for handling reference lists
 
@@ -138,8 +137,8 @@ curl https://127.0.0.1:5000/api/v1/data/stream --insecure
 
 **Expected Output**
 ```json
-data: {"timestamp": "2024-08-06T12:00:00Z", "hostname": "r700-emulator", "eventType": "tagInventory", "tagInventoryEvent": {"epc": "2U3T7XY4z5tHhbvN", "epcHex": "3500B6D9801234567890ABCDEF", "antennaPort": 1, "antennaName": "Antenna 1"}}
-data: {"timestamp": "2024-08-06T12:00:02Z", "hostname": "r700-emulator", "eventType": "tagInventory", "tagInventoryEvent": {"epc": "1B6M3HjA9z7Yp5tD", "epcHex": "3500B6D9800987654321FEDCBA", "antennaPort": 1, "antennaName": "Antenna 1"}}
+{"timestamp": "2024-08-06T12:00:00Z", "hostname": "r700-emulator", "eventType": "tagInventory", "tagInventoryEvent": {"epc": "2U3T7XY4z5tHhbvN", "epcHex": "3500B6D9801234567890ABCDEF", "antennaPort": 1, "antennaName": "Antenna 1"}}
+{"timestamp": "2024-08-06T12:00:02Z", "hostname": "r700-emulator", "eventType": "tagInventory", "tagInventoryEvent": {"epc": "1B6M3HjA9z7Yp5tD", "epcHex": "3500B6D9800987654321FEDCBA", "antennaPort": 1, "antennaName": "Antenna 1"}}
 ```
 
 **Configure MQTT Settings**
