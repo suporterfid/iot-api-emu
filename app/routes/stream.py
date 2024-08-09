@@ -8,13 +8,10 @@ from app.utils import load_settings, save_settings, mqtt_config, webhook_config,
 from app.mqtt import mqtt_client, start_mqtt_thread
 from app.events import TagEvent
 from app.epc import EPC
+import app.config as config
 
 stream_bp = Blueprint('stream', __name__)
 api = Api(stream_bp)
-
-streaming = False
-epc_index = 0
-unique_epc_sent = False
 
 class DataStream(Resource):
     def get(self):
@@ -55,9 +52,11 @@ class StartStream(Resource):
           404:
             description: Preset not found
         """
-        global streaming, epc_index, unique_epc_sent
-        if preset_id == 'default':
-            streaming = True
+        global epc_index, unique_epc_sent
+        print(f"preset_id {preset_id}")       
+        if preset_id == 'default': 
+            config.streaming = True  # Set streaming to True
+            print(f"streaming {config.streaming}")             
             epc_index = 0
             unique_epc_sent = False
             return '', 204
@@ -72,8 +71,7 @@ class StopStream(Resource):
           204:
             description: Stream stopped
         """
-        global streaming
-        streaming = False
+        config.streaming = False  # Set streaming to False
         return '', 204
 
 def get_next_epc():

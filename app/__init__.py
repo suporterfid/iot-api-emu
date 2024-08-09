@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_restful import Api
 from flasgger import Swagger
+from datetime import datetime
 from .routes.stream import stream_bp
 from .routes.status import status_bp
 from .routes.mqtt_settings import mqtt_settings_bp
@@ -11,6 +12,12 @@ from .routes.auth_config import auth_config_bp
 from .routes.users import users_bp
 from .routes.certificates import certificates_bp
 from app.routes.reference_lists import reference_lists_bp
+from app.routes.status import status_bp
+from app.routes.system_time import system_time_bp
+import app.config as config
+
+# Global variable to store the start time of the system
+config.system_start_time = datetime.utcnow()
 
 def create_app():
     app = Flask(__name__)
@@ -45,5 +52,8 @@ def create_app():
     app.register_blueprint(certificates_bp)
     # Register the reference lists blueprint
     app.register_blueprint(reference_lists_bp, url_prefix='/manage')
+    app.register_blueprint(status_bp)
+    app.register_blueprint(system_time_bp)
+   
 
     return app
