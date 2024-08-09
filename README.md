@@ -117,7 +117,7 @@ The emulator now supports loading predefined EPC lists from local files. There a
 Start streaming tag events.
 
 ```sh
-curl -X POST http://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/start --insecure
+curl -X POST https://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/start --insecure
 ```
 
 **Stop Stream**
@@ -125,7 +125,7 @@ curl -X POST http://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/sta
 Stop streaming tag events.
 
 ```sh
-curl -X POST http://127.0.0.1:5000/api/v1/profiles/stop --insecure
+curl -X POST https://127.0.0.1:5000/api/v1/profiles/stop --insecure
 ```
 
 **Get Data Stream**
@@ -133,7 +133,7 @@ curl -X POST http://127.0.0.1:5000/api/v1/profiles/stop --insecure
 Get the streamed tag events.
 
 ```sh
-curl http://127.0.0.1:5000/api/v1/data/stream --insecure
+curl https://127.0.0.1:5000/api/v1/data/stream --insecure
 ```
 
 **Expected Output**
@@ -147,7 +147,7 @@ data: {"timestamp": "2024-08-06T12:00:02Z", "hostname": "r700-emulator", "eventT
 Configure MQTT publisher settings.
 
 ```sh
-curl -X PUT http://127.0.0.1:5000/api/v1/mqtt -H "Content-Type: application/json" -d '{
+curl -X PUT https://127.0.0.1:5000/api/v1/mqtt -H "Content-Type: application/json" -d '{
     "brokerHostname": "mqtt.example.com",
     "clientId": "Nq4PfQD",
     "eventTopic": "l",
@@ -175,7 +175,7 @@ curl -X PUT http://127.0.0.1:5000/api/v1/mqtt -H "Content-Type: application/json
 Configure Webhook publisher settings.
 
 ```sh
-curl -X PUT http://127.0.0.1:5000/api/v1/webhooks/event -H "Content-Type: application/json" -d '{
+curl -X PUT https://127.0.0.1:5000/api/v1/webhooks/event -H "Content-Type: application/json" -d '{
     "active": true,
     "eventBatchLimit": 10000,
     "eventBatchLingerMilliseconds": 1000,
