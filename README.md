@@ -8,6 +8,10 @@ This project **emulates basic operations** of the IoT device interface API with 
 - Publish events to MQTT brokers
 - Publish events to HTTP servers via Webhooks
 - Support for predefined EPC lists from files
+- HTTPS support with self-signed certificate
+- HTTPS support with self-signed certificate
+- Configurable basic authentication
+- Management API for handling reference lists
 
 ## Setup Development Environment
 
@@ -35,7 +39,12 @@ This project **emulates basic operations** of the IoT device interface API with 
     pip install -r requirements.txt
     ```
 
-4. **Run the Flask application**:
+4. **Generate a self-signed certificate**:
+    ```sh
+    docker run --rm -v %cd%:/output -w /output alpine/openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 -nodes -subj "/C=NA/ST=NA/L=Lab/O=My Organization/OU=Emulator/CN=localhost"
+    ```
+
+5. **Run the Flask application**:
     ```sh
     python run.py
     ```
@@ -55,8 +64,15 @@ This project **emulates basic operations** of the IoT device interface API with 
     ```
 
 2. **Access the application**:
-    - The application will be available at `http://localhost:5000`
-    - The Swagger UI will be accessible at `http://localhost:5000/swagger/`
+    - The application will be available at `https://localhost:5000`
+    - The Swagger UI will be accessible at `https://localhost:5000/swagger/`
+
+### Environment Variables
+
+- `USE_HTTPS`: Set to `True` to enable HTTPS (default: `True`).
+- `USE_BASIC_AUTH`: Set to `True` to enable basic authentication (default: `False`).
+- `BASIC_AUTH_USERNAME`: Username for basic authentication (default: `admin`).
+- `BASIC_AUTH_PASSWORD`: Password for basic authentication (default: `password`).
 
 ## EPC List Enhancements
 
@@ -101,7 +117,7 @@ The emulator now supports loading predefined EPC lists from local files. There a
 Start streaming tag events.
 
 ```sh
-curl -X POST http://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/start
+curl -X POST http://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/start --insecure
 ```
 
 **Stop Stream**
@@ -109,7 +125,7 @@ curl -X POST http://127.0.0.1:5000/api/v1/profiles/inventory/presets/default/sta
 Stop streaming tag events.
 
 ```sh
-curl -X POST http://127.0.0.1:5000/api/v1/profiles/stop
+curl -X POST http://127.0.0.1:5000/api/v1/profiles/stop --insecure
 ```
 
 **Get Data Stream**
@@ -117,7 +133,7 @@ curl -X POST http://127.0.0.1:5000/api/v1/profiles/stop
 Get the streamed tag events.
 
 ```sh
-curl http://127.0.0.1:5000/api/v1/data/stream
+curl http://127.0.0.1:5000/api/v1/data/stream --insecure
 ```
 
 **Expected Output**
@@ -151,7 +167,7 @@ curl -X PUT http://127.0.0.1:5000/api/v1/mqtt -H "Content-Type: application/json
     "willMessage": "connection lost",
     "willQualityOfService": 1,
     "willTopic": ""
-}'
+}' --insecure
 ```
 
 **Configure Webhook Settings**
@@ -174,8 +190,57 @@ curl -X PUT http://127.0.0.1:5000/api/v1/webhooks/event -H "Content-Type: applic
         "port": 443,
         "tls": {}
     }
-}'
+}' --insecure
 ```
+
+## Reference List Management API
+
+This section describes the API endpoints for managing the reference lists (`reference-list.txt` and `reference-list-unique.txt`).
+
+### Create or Update a Reference List
+
+- **URL**: `POST /manage/ref-lists/<list_type>`
+- **Description**: Create or replace the content of the reference list. `<list_type>` can be `default` for `reference-list.txt` or `unique` for `reference-list-unique.txt`.
+- **Request Body**: A JSON array of EPC strings.
+
+**Example**:
+```sh
+curl -X POST https://localhost:5000/manage/ref-lists/default -H "Content-Type: application/json" -d '[
+    "3500B6D9801234567890ABCDEF",
+    "3500B6D9800987654321FEDCBA"
+]'  --insecure
+```
+### Append to a Reference List
+- **URL**: `PUT /manage/ref-lists/<list_type>`
+- **Description**: Append EPCs to the reference list. <list_type> can be default for reference-list.txt or unique for reference-list-unique.txt.
+- **Request Body**: A JSON array of EPC strings.
+
+**Example**:
+```sh
+curl -X PUT https://localhost:5000/manage/ref-lists/default -H "Content-Type: application/json" -d '[
+    "3500B6D9801122334455667788"
+]' --insecure
+```
+
+### Query a Reference List
+- **URL**: `GET /manage/ref-lists/<list_type>`
+- **Description**: Retrieve the content of a reference list. <list_type> can be default for reference-list.txt or unique for reference-list-unique.txt.
+
+**Example**:
+```sh
+curl https://localhost:5000/manage/ref-lists/default --insecure
+```
+
+### Delete a Reference List
+- **URL**: `DELETE /manage/ref-lists/<list_type>`
+- **Description**: Delete the reference list file. <list_type> can be default for reference-list.txt or unique for reference-list-unique.txt.
+
+**Example**:
+```sh
+curl -X DELETE https://localhost:5000/manage/ref-lists/default  --insecure
+```
+
+
 ## Disclaimer
 
 This emulator is designed to accelerate the initial development process for new adopters of RAIN RFID who are in the process of acquiring an Impinj R700 RAIN RFID reader with the IoT Device Interface. **It does not aim to replace the hardware** and comes with no guarantee of updates in accordance with new released versions of the API. Use it at your own risk. **This code is neither supported nor endorsed by Impinj Inc.**
@@ -193,6 +258,7 @@ Flask: A lightweight WSGI web application framework in Python.
 Flask-RESTful: An extension for Flask that adds support for quickly building REST APIs.
 paho-mqtt: The Paho Python Client provides a client class that enables applications to connect to an MQTT broker.
 requests: A simple, yet elegant HTTP library for Python.
+Flasgger: A Flask extension to provide Swagger UI for your API.
 For more information, please refer to the official documentation.
 
 ## License

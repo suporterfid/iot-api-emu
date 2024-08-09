@@ -1,6 +1,7 @@
 import paho.mqtt.client as mqtt
 import threading
 import time
+import ssl
 
 mqtt_client = mqtt.Client()
 
@@ -18,9 +19,36 @@ def on_publish(client, userdata, mid):
 
 def connect_mqtt(mqtt_config):
     global mqtt_client
+    
+    # Configure TLS if enabled
+    if mqtt_config.get('tlsEnabled', False):
+        tls_certfile = mqtt_config.get('tlsCertfile', None)  # Client certificate
+        tls_keyfile = mqtt_config.get('tlsKeyfile', None)    # Client private key
+        tls_cafile = mqtt_config.get('tlsCafile', None)      # CA certificate
+        tls_insecure = mqtt_config.get('tlsInsecure', False) # Whether to bypass the server certificate verification
+        
+        # Set up TLS/SSL
+        mqtt_client.tls_set(
+            ca_certs=tls_cafile,
+            certfile=tls_certfile,
+            keyfile=tls_keyfile,
+            cert_reqs=ssl.CERT_NONE if tls_insecure else ssl.CERT_REQUIRED,
+            tls_version=ssl.PROTOCOL_TLS,
+            ciphers=None
+        )
+        
+        # Allow unsecure or self-signed certificates
+        mqtt_client.tls_insecure_set(tls_insecure)
+    
+    # Set username and password if provided
+    if mqtt_config.get('username'):
+        mqtt_client.username_pw_set(mqtt_config['username'], mqtt_config.get('password', ''))
+    
+    # Connect to the MQTT broker
     while mqtt_config.get('active', False):
         try:
-            mqtt_client.connect(mqtt_config['brokerHostname'], mqtt_config.get('brokerPort', 1883), mqtt_config.get('keepAliveIntervalSeconds', 60))
+            broker_port = mqtt_config.get('brokerPort', 8883 if mqtt_config.get('tlsEnabled', False) else 1883)
+            mqtt_client.connect(mqtt_config['brokerHostname'], broker_port, mqtt_config.get('keepAliveIntervalSeconds', 60))
             mqtt_client.loop_start()
             break
         except Exception as e:

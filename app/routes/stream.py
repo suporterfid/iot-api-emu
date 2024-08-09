@@ -32,7 +32,7 @@ class DataStream(Resource):
                     break
                 event = TagEvent(epc)
                 event_data = event.to_dict()
-                yield f"data: {json.dumps(event_data)}\n\n"
+                yield f"{json.dumps(event_data)}\n\n"
                 if mqtt_config.get('active', False):
                     mqtt_client.publish(mqtt_config.get('eventTopic', 'default/topic'), json.dumps(event_data), qos=mqtt_config.get('eventQualityOfService', 0))
                 time.sleep(2)  # Simulate delay between events

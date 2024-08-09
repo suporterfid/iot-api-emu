@@ -10,6 +10,7 @@ from .routes.system_info import system_info_bp
 from .routes.auth_config import auth_config_bp
 from .routes.users import users_bp
 from .routes.certificates import certificates_bp
+from app.routes.reference_lists import reference_lists_bp
 
 def create_app():
     app = Flask(__name__)
@@ -42,5 +43,7 @@ def create_app():
     app.register_blueprint(auth_config_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(certificates_bp)
+    # Register the reference lists blueprint
+    app.register_blueprint(reference_lists_bp, url_prefix='/manage')
 
     return app
