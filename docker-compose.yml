@@ -11,7 +11,7 @@ services:
       - .:/app
     environment:
       - FLASK_ENV=development
-      - USE_HTTPS=True
-      - USE_BASIC_AUTH=True
-      - BASIC_AUTH_USERNAME=admin
-      - BASIC_AUTH_PASSWORD=password
+      - USE_HTTPS=False
+      - USE_BASIC_AUTH=False
+      # - BASIC_AUTH_USERNAME=admin
+      # - BASIC_AUTH_PASSWORD=password

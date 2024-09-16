@@ -13,6 +13,10 @@ import app.config as config
 stream_bp = Blueprint('stream', __name__)
 api = Api(stream_bp)
 
+# Initialize global variables
+epc_index = 0
+unique_epc_sent = False
+
 class DataStream(Resource):
     def get(self):
         """
@@ -23,7 +27,7 @@ class DataStream(Resource):
             description: Streamed tag events
         """
         def generate():
-            while streaming:
+            while config.streaming:
                 epc = get_next_epc()
                 if epc is None:
                     break

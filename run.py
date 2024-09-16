@@ -40,6 +40,6 @@ if USE_BASIC_AUTH:
 if __name__ == '__main__':
     if USE_HTTPS:
         context = ('cert.pem', 'key.pem')
-        app.run(debug=True, ssl_context=context)
+        app.run(debug=True, ssl_context=context, host='0.0.0.0')
     else:
-        app.run(debug=True)
+        app.run(debug=True, host='0.0.0.0')
