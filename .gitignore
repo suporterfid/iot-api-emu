@@ -1498,3 +1498,4 @@ venv/Scripts/python.exe
 venv/Scripts/pythonw.exe
 settings.json
 *.pyc
+venv/
