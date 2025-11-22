@@ -26,6 +26,7 @@ class DataStream(Resource):
           200:
             description: Streamed tag events
         """
+        from app.mqtt import send_iothub_message_http
         def generate():
             while config.streaming:
                 epc = get_next_epc()
@@ -33,38 +34,66 @@ class DataStream(Resource):
                     break
                 event = TagEvent(epc)
                 event_data = event.to_dict()
-                yield f"{json.dumps(event_data)}\n\n"
+                # Always attempt to send to IoT Hub if active
                 if mqtt_config.get('active', False):
-                    mqtt_client.publish(mqtt_config.get('eventTopic', 'default/topic'), json.dumps(event_data), qos=mqtt_config.get('eventQualityOfService', 0))
+                    print(f"[STREAM] Sending event to IoT Hub: {event_data}")
+                    send_iothub_message_http(mqtt_config, event_data)
+                yield f"{json.dumps(event_data)}\n\n"
                 time.sleep(2)  # Simulate delay between events
-                
         return Response(generate(), content_type='text/event-stream')
 
 class StartStream(Resource):
-    def post(self, preset_id):
-        """
-        Start streaming tag events.
-        ---
-        parameters:
-          - in: path
-            name: preset_id
-            required: true
-            type: string
-        responses:
-          204:
-            description: Stream started
-          404:
-            description: Preset not found
-        """
-        global epc_index, unique_epc_sent
-        print(f"preset_id {preset_id}")       
-        if preset_id == 'default': 
-            config.streaming = True  # Set streaming to True
-            print(f"streaming {config.streaming}")             
-            epc_index = 0
-            unique_epc_sent = False
-            return '', 204
-        return '', 404
+        def post(self, preset_id):
+                """
+                Start streaming tag events and send them to IoT Hub in a background thread.
+                ---
+                parameters:
+                    - in: path
+                        name: preset_id
+                        required: true
+                        type: string
+                responses:
+                    204:
+                        description: Stream started
+                    404:
+                        description: Preset not found
+                """
+                import threading
+                from app.mqtt import send_iothub_message_http
+                global epc_index, unique_epc_sent
+                print(f"preset_id {preset_id}")
+                if preset_id == 'default':
+                    import app.utils as utils
+                    utils.load_settings()
+                    current_config = utils.mqtt_config
+                    required_keys = ['brokerHostname', 'clientId', 'password']
+                    if not all(k in current_config and current_config[k] for k in required_keys):
+                        print(f"[START STREAM] ERROR: MQTT config missing required keys: {required_keys}. Not starting stream thread.")
+                        return {"error": "MQTT config missing required keys."}, 400
+                    config.streaming = True
+                    print(f"streaming {config.streaming}")
+                    epc_index = 0
+                    unique_epc_sent = False
+
+                    def stream_to_iothub():
+                        while config.streaming:
+                            utils.load_settings()
+                            current_config = utils.mqtt_config
+                            if not all(k in current_config and current_config[k] for k in required_keys):
+                                print(f"[BG STREAM] ERROR: MQTT config missing required keys: {required_keys}. Stopping stream thread.")
+                                break
+                            # Always generate a new event and send only the event payload
+                            epc = get_next_epc()
+                            event = TagEvent(epc)
+                            event_data = event.to_dict()
+                            print(f"[BG STREAM] Sending event to IoT Hub: {event_data}")
+                            send_iothub_message_http(current_config, event_data)
+                            time.sleep(2)
+
+                    t = threading.Thread(target=stream_to_iothub, daemon=True)
+                    t.start()
+                    return '', 204
+                return '', 404
 
 class StopStream(Resource):
     def post(self):
@@ -104,6 +133,7 @@ def get_next_epc():
         epc_index += 1
         return epc
     else:
+        # Always generate a new random EPC if no file exists
         return EPC()
 
 api.add_resource(DataStream, '/api/v1/data/stream')

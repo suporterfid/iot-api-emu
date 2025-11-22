@@ -13,9 +13,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY . .
 
+
 # Copy SSL certificates
 COPY cert.pem cert.pem
 COPY key.pem key.pem
+# Copy Baltimore CyberTrust Root CA for Azure IoT Hub
+COPY baltimore_cybertrust_root.pem baltimore_cybertrust_root.pem
 
 # Expose the port the app runs on
 EXPOSE 5000
